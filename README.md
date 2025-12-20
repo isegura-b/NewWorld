@@ -1,73 +1,111 @@
-# React + TypeScript + Vite
+# 🌱 NewWorld - Simulación Ecológica
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+![NewWorld Demo](image1)
 
-Currently, two official plugins are available:
+> *Un ecosistema virtual inspirado en el legendario **Juego de la Vida de Conway***
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🎯 Sobre el Proyecto
 
-## React Compiler
+**NewWorld** nació después de explorar el fascinante [Juego de la Vida de Conway](https://es.wikipedia.org/wiki/Juego_de_la_vida). Lo que empezó como curiosidad se transformó en una simulación ecológica completa donde agentes autónomos luchan por sobrevivir en un mundo dinámico. 
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+A diferencia del autómata celular clásico, aquí los **agentes** son individuos con hambre, instinto de supervivencia y la necesidad de encontrar recursos en un entorno que cambia constantemente. 
 
-## Expanding the ESLint configuration
+## ✨ Características
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+🦾 **Agentes Autónomos**
+- Sistema de hambre y supervivencia
+- Búsqueda inteligente de recursos
+- Movimiento adaptativo
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+🌿 **Ecosistema Dinámico**
+- Hierba que crece con el tiempo
+- Recursos limitados y renovables
+- Balance natural entre población y alimentación
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+⚡ **Simulación en Tiempo Real**
+- Control de velocidad ajustable
+- Múltiples tamaños de mundo (x1, x2, x4)
+- Visualización instantánea del estado poblacional
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 🚀 Instalación
+
+```bash
+# Clonar el repositorio
+git clone https://github.com/isegura-b/NewWorld.git
+
+# Entrar al directorio
+cd NewWorld
+
+# Instalar dependencias
+npm install
+
+# Iniciar el servidor de desarrollo
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🎮 Cómo Usar
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+1. **Start**:  Inicia la simulación
+2. **Stop**: Pausa el ecosistema
+3. **Restart**: Reinicia con una nueva población aleatoria
+4. **Speed**:  Controla la velocidad de la simulación (1-500)
+5. **Size**: Elige el tamaño del mundo
+   - `x1` - 500x500px (20 agentes)
+   - `x2` - 1000x1000px (50 agentes)
+   - `x4` - 2000x2000px (500 agentes)
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 🧪 Tecnologías
+
+- **TypeScript** - Tipado estático y desarrollo robusto
+- **Vite** - Build tool ultra rápido
+- **HTML5 Canvas** - Renderizado gráfico eficiente
+
+## 🎨 Cómo Funciona
+
+### El Ciclo de Vida
+
+```typescript
+1. Los agentes buscan hierba (verde) para alimentarse
+2. Al comer, satisfacen su hambre por 10 turnos
+3. Sin comida, pierden hambre cada turno
+4. Con hambre = 0, el agente muere
+5. La hierba comida se regenera después de 100 ticks
 ```
+
+### Sistema de Movimiento
+
+Los agentes utilizan un **algoritmo de búsqueda radial** que:
+- Busca comida en círculos concéntricos crecientes
+- Evita colisiones con otros agentes
+- Se mueve aleatoriamente si no encuentra comida cercana
+
+## 🔮 Futuras Mejoras
+
+- [ ] Reproducción de agentes
+- [ ] Diferentes tipos de agentes (herbívoros/carnívoros)
+- [ ] Estadísticas y gráficas de población
+- [ ] Modos de visualización adicionales
+
+## 🤝 Contribuciones
+
+Las contribuciones son bienvenidas! Si tienes ideas para mejorar NewWorld: 
+
+1. Fork el proyecto
+2. Crea una rama (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add:  AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
+
+## 📝 Licencia
+
+Este proyecto está bajo la Licencia MIT - mira el archivo [LICENSE](LICENSE) para más detalles.
+
+---
+
+<div align="center">
+
+**[⭐ Si te gusta el proyecto, dale una estrella!](https://github.com/isegura-b/NewWorld)**
+
+Hecho con 💚 por [isegura-b](https://github.com/isegura-b)
+
+</div>
