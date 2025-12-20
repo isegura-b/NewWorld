@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+  <div style="margin-top: 10px;margin-left: 10px; margin-bottom: 10px;">
+    <button id="startBtn">Start</button>
+    <button id="stopBtn">Stop</button>
+    <button id="resetBtn">Restart</button>
+    Speed: <input type="range" id="speedRange" min="0" max="500" value="100">
+    Population: <span id="population">0</span>
+  </div>
+  <div style="margin-top: 10px;margin-left: 10px; margin-bottom: 10px;">
+    Size: 
+    <button id="x1Btn">x1</button>
+    <button id="x2Btn">x2</button>
+    <button id="x4Btn">x4</button>
+  </div>
+  <canvas  id="gameoflife" style=" border : 2px solid black;margin-left: 10px"></canvas>
+  <script type="module" src="src/web.ts"></script>
+</body>
+
+</html>
