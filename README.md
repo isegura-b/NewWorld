@@ -10,9 +10,6 @@
 ![Canvas](https://img.shields.io/badge/Canvas_API-000000?style=for-the-badge&logo=html5&logoColor=white)
 
 </div>
-
-![NewWorld Demo](image1)
-
 > *A virtual ecosystem inspired by the legendary **Conway's Game of Life***
 
 ## 🎯 About The Project
@@ -20,7 +17,9 @@
 **NewWorld** was born after exploring the fascinating [Conway's Game of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life). What started as curiosity evolved into a complete ecological simulation where autonomous agents fight to survive in a dynamic world.
 
 Unlike the classic cellular automaton, here the **agents** are individuals with hunger, survival instincts, and the need to find resources in a constantly changing environment.
-
+<div align="center">
+<img width="553" height="603" alt="image" src="https://github.com/user-attachments/assets/e1ddd376-a5fb-4142-9d48-91db3891cf4b" />
+</div>
 ## ✨ Features
 
 🦾 **Autonomous Agents**
