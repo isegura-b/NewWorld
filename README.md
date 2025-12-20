@@ -1,111 +1,152 @@
-# 🌱 NewWorld - Simulación Ecológica
+# 🌱 NewWorld - Ecological Simulation
+
+<div align="center">
+
+![TypeScript](https://img.shields.io/badge/TypeScript-87. 4%25-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-5.8%25-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
+![HTML](https://img.shields.io/badge/HTML-6.8%25-E34F26? style=for-the-badge&logo=html5&logoColor=white)
+
+![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
+![Canvas](https://img.shields.io/badge/Canvas_API-000000?style=for-the-badge&logo=html5&logoColor=white)
+
+</div>
 
 ![NewWorld Demo](image1)
 
-> *Un ecosistema virtual inspirado en el legendario **Juego de la Vida de Conway***
+> *A virtual ecosystem inspired by the legendary **Conway's Game of Life***
 
-## 🎯 Sobre el Proyecto
+## 🎯 About The Project
 
-**NewWorld** nació después de explorar el fascinante [Juego de la Vida de Conway](https://es.wikipedia.org/wiki/Juego_de_la_vida). Lo que empezó como curiosidad se transformó en una simulación ecológica completa donde agentes autónomos luchan por sobrevivir en un mundo dinámico. 
+**NewWorld** was born after exploring the fascinating [Conway's Game of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life). What started as curiosity evolved into a complete ecological simulation where autonomous agents fight to survive in a dynamic world.
 
-A diferencia del autómata celular clásico, aquí los **agentes** son individuos con hambre, instinto de supervivencia y la necesidad de encontrar recursos en un entorno que cambia constantemente. 
+Unlike the classic cellular automaton, here the **agents** are individuals with hunger, survival instincts, and the need to find resources in a constantly changing environment.
 
-## ✨ Características
+## ✨ Features
 
-🦾 **Agentes Autónomos**
-- Sistema de hambre y supervivencia
-- Búsqueda inteligente de recursos
-- Movimiento adaptativo
+🦾 **Autonomous Agents**
+- Hunger and survival system
+- Intelligent resource searching
+- Adaptive movement behavior
 
-🌿 **Ecosistema Dinámico**
-- Hierba que crece con el tiempo
-- Recursos limitados y renovables
-- Balance natural entre población y alimentación
+🌿 **Dynamic Ecosystem**
+- Grass that grows over time
+- Limited and renewable resources
+- Natural balance between population and food supply
 
-⚡ **Simulación en Tiempo Real**
-- Control de velocidad ajustable
-- Múltiples tamaños de mundo (x1, x2, x4)
-- Visualización instantánea del estado poblacional
+⚡ **Real-Time Simulation**
+- Adjustable speed control
+- Multiple world sizes (x1, x2, x4)
+- Instant population status visualization
 
-## 🚀 Instalación
+## 🚀 Installation
 
 ```bash
-# Clonar el repositorio
+# Clone the repository
 git clone https://github.com/isegura-b/NewWorld.git
 
-# Entrar al directorio
+# Enter the directory
 cd NewWorld
 
-# Instalar dependencias
+# Install dependencies
 npm install
 
-# Iniciar el servidor de desarrollo
+# Start the development server
 npm run dev
 ```
 
-## 🎮 Cómo Usar
+## 🎮 How to Use
 
-1. **Start**:  Inicia la simulación
-2. **Stop**: Pausa el ecosistema
-3. **Restart**: Reinicia con una nueva población aleatoria
-4. **Speed**:  Controla la velocidad de la simulación (1-500)
-5. **Size**: Elige el tamaño del mundo
-   - `x1` - 500x500px (20 agentes)
-   - `x2` - 1000x1000px (50 agentes)
-   - `x4` - 2000x2000px (500 agentes)
+1. **Start**:  Begin the simulation
+2. **Stop**:  Pause the ecosystem
+3. **Restart**: Reset with a new random population
+4. **Speed**: Control simulation speed (1-500)
+5. **Size**: Choose the world size
+   - `x1` - 500x500px (20 agents)
+   - `x2` - 1000x1000px (50 agents)
+   - `x4` - 2000x2000px (500 agents)
 
-## 🧪 Tecnologías
+## 🧪 Tech Stack
 
-- **TypeScript** - Tipado estático y desarrollo robusto
-- **Vite** - Build tool ultra rápido
-- **HTML5 Canvas** - Renderizado gráfico eficiente
+<div align="center">
 
-## 🎨 Cómo Funciona
+| Technology | Purpose |
+|------------|---------|
+| ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white) | Static typing and robust development |
+| ![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white) | Ultra-fast build tool |
+| ![HTML5](https://img.shields.io/badge/HTML5_Canvas-E34F26?style=flat-square&logo=html5&logoColor=white) | Efficient graphic rendering |
 
-### El Ciclo de Vida
+</div>
+
+## 🎨 How It Works
+
+### The Life Cycle
 
 ```typescript
-1. Los agentes buscan hierba (verde) para alimentarse
-2. Al comer, satisfacen su hambre por 10 turnos
-3. Sin comida, pierden hambre cada turno
-4. Con hambre = 0, el agente muere
-5. La hierba comida se regenera después de 100 ticks
+1. Agents search for grass (green) to feed
+2. When eating, they satisfy hunger for 10 turns
+3. Without food, they lose hunger each turn
+4. With hunger = 0, the agent dies
+5. Eaten grass regenerates after 100 ticks
 ```
 
-### Sistema de Movimiento
+### Movement System
 
-Los agentes utilizan un **algoritmo de búsqueda radial** que:
-- Busca comida en círculos concéntricos crecientes
-- Evita colisiones con otros agentes
-- Se mueve aleatoriamente si no encuentra comida cercana
+Agents use a **radial search algorithm** that:
+- Searches for food in growing concentric circles
+- Avoids collisions with other agents
+- Moves randomly if no nearby food is found
+- Intelligently navigates towards the nearest resource
 
-## 🔮 Futuras Mejoras
+### Color Coding
 
-- [ ] Reproducción de agentes
-- [ ] Diferentes tipos de agentes (herbívoros/carnívoros)
-- [ ] Estadísticas y gráficas de población
-- [ ] Modos de visualización adicionales
+- 🟩 **Green**: Available grass (food)
+- 🟫 **Brown**: Consumed grass (regenerating)
+- ⬛ **Black**: Living agents
 
-## 🤝 Contribuciones
+## 📊 Project Structure
 
-Las contribuciones son bienvenidas! Si tienes ideas para mejorar NewWorld: 
+```
+NewWorld/
+├── src/
+│   ├── gol.ts        # Core simulation logic
+│   ├── web.ts        # UI controls and interactions
+│   └── tsconfig.json
+├── public/
+├── index.html        # Main HTML file
+├── package.json
+├── vite.config.ts
+└── README.md
+```
 
-1. Fork el proyecto
-2. Crea una rama (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add:  AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
+## 🔮 Future Improvements
 
-## 📝 Licencia
+- [ ] Agent reproduction system
+- [ ] Different agent types (herbivores/carnivores)
+- [ ] Population statistics and graphs
+- [ ] Genetic algorithms for agent evolution
 
-Este proyecto está bajo la Licencia MIT - mira el archivo [LICENSE](LICENSE) para más detalles.
+## 🤝 Contributing
+
+Contributions are welcome! If you have ideas to improve NewWorld: 
+
+1. Fork the project
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add:  AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📫 Contact
+
+**isegura-b** - [@isegura-b](https://github.com/isegura-b)
+
+Project Link: [https://github.com/isegura-b/NewWorld](https://github.com/isegura-b/NewWorld)
 
 ---
 
 <div align="center">
 
-**[⭐ Si te gusta el proyecto, dale una estrella!](https://github.com/isegura-b/NewWorld)**
+**[⭐ If you like the project, give it a star!](https://github.com/isegura-b/NewWorld)**
 
-Hecho con 💚 por [isegura-b](https://github.com/isegura-b)
+Made by [isegura-b](https://github.com/isegura-b)
 
 </div>
