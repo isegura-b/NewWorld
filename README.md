@@ -18,7 +18,7 @@
 
 Unlike the classic cellular automaton, here the **agents** are individuals with hunger, survival instincts, and the need to find resources in a constantly changing environment.
 <div align="center">
-<img width="553" height="603" alt="image" src="https://github.com/user-attachments/assets/e1ddd376-a5fb-4142-9d48-91db3891cf4b" />
+<img width="768" height="811" alt="image" src="https://github.com/user-attachments/assets/caf99d9b-fa84-4d9c-a02e-bfb55f3e5ecb" />
 </div>
 ## ✨ Features
 
