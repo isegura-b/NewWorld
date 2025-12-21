@@ -4,14 +4,24 @@ const ctx = canvas.getContext("2d")!;
 canvas.width = 500;
 canvas.height = 500;
 
-const cellSize = 10;
-let na: number = 20;
+const cellSize = 20;
+let ANIMAL_NUMBER: number = 3;
+let PREDATOR_NUMBER: number = 3;
 let cols: number = canvas.width / cellSize;
 let rows: number = canvas.height / cellSize;
 
 const BROWN = "#552d00ff";
 const GREEN = "#1d9200ff";
+const WATER = "#1e6ff2";
 const GROW_TICKS = 100;
+
+const HUNGER_NUM = 15;
+
+const MIN_HUNGER_V = 10;
+const MIN_HUNGER_C = 5;
+
+const FEED_V_NUM = 5;
+const FEED_C_CUM = 10;
 
 
 let grid: number[][] = [];
@@ -38,6 +48,50 @@ function initTimer(timer: number[][]) {
 }
 initTimer(growTimer);
 
+function generateRiver(g: number[][]) {
+    const orientationLR = Math.random() < 0.5; // true: left->right, false: top->bottom
+    const base = Math.max(2, Math.floor(Math.min(rows, cols) * 0.05));
+    const riverWidth = base + Math.floor(Math.random() * 2);
+
+    if (orientationLR) {
+        let y = Math.floor(Math.random() * (rows - 2)) + 1;
+        for (let x = 0; x < cols; x++) {
+            const half = Math.floor(riverWidth / 2);
+            for (let dy = -half; dy <= half; dy++) {
+                const ry = Math.min(Math.max(y + dy, 0), rows - 1);
+                g[ry][x] = 2;
+            }
+            const r = Math.random();
+            let momentum = 0;
+            let drift = 0;
+            if (r < 0.2) 
+                drift = -1; 
+            else if (r > 0.8)
+                drift = 1;
+            if (momentum !== 0 && Math.random() < 0.6)
+                drift = momentum;
+            y = Math.min(Math.max(y + drift, 1), rows - 2);
+            momentum = drift;
+        }
+    } else {
+        let x = Math.floor(Math.random() * (cols - 2)) + 1
+        let momentum = 0;
+        for (let y = 0; y < rows; y++) {
+            const half = Math.floor(riverWidth / 2);
+            for (let dx = -half; dx <= half; dx++) {
+                const rx = Math.min(Math.max(x + dx, 0), cols - 1);
+                g[y][rx] = 2;
+            }
+            const r = Math.random();
+            let drift = 0;
+            if (r < 0.2) drift = -1; else if (r > 0.8) drift = 1;
+            if (momentum !== 0 && Math.random() < 0.6) drift = momentum;
+            x = Math.min(Math.max(x + drift, 1), cols - 2);
+            momentum = drift;
+        }
+    }
+}
+
 function drawGrid(ctx: CanvasRenderingContext2D, width: number, height: number, cellSize: number) {
     ctx.strokeStyle = "#505050ff";
     ctx.lineWidth = 1;
@@ -59,32 +113,39 @@ function drawGrid(ctx: CanvasRenderingContext2D, width: number, height: number, 
 function searchForFood(g: number[][], y: number, x: number): { x: number; y: number } | null {
     const max = Math.max(rows, cols);
     for (let r = 1; r <= max; r++) {
-        const candidates: Array<{ x: number; y: number }> = [];
+        const candidates: Array<{ stepX: number; stepY: number; mapX: number; mapY: number }> = [];
         for (let dy = -r; dy <= r; dy++) {
             for (let dx = -r; dx <= r; dx++) {
-                if (dx === 0 && dy === 0) 
+                if (dx === 0 && dy === 0)
                     continue;
                 const ny = y + dy;
                 const nx = x + dx;
-                if (ny < 0 || ny >= rows || nx < 0 || nx >= cols) 
+                if (ny < 0 || ny >= rows || nx < 0 || nx >= cols)
                     continue;
                 if (g[ny][nx] === 1) {
-                    candidates.push({ x: Math.sign(dx), y: Math.sign(dy) });
+                    candidates.push({ stepX: Math.sign(dx), stepY: Math.sign(dy), mapX: nx, mapY: ny });
                 }
             }
         }
-        if (candidates.length) {
-            return candidates[Math.floor(Math.random() * candidates.length)];
+        if (candidates.length > 0) {
+            const c = candidates[Math.floor(Math.random() * candidates.length)];
+            return { x: c.stepX, y: c.stepY };
         }
     }
     return null;
 }
 
 function isFree(x: number, y: number, self: Animal): boolean {
+    if (grid[y][x] === 2)
+        return false;
     for (const a of animals) {
-        if (a === self) 
+        if (a === self)
             continue;
-        if (a.x === x && a.y === y) 
+        if (a.x === x && a.y === y)
+            return false;
+    }
+    for (const p of predators) {
+        if (p.x === x && p.y === y)
             return false;
     }
     return true;
@@ -96,17 +157,19 @@ function pickFreeNeighbor(x: number, y: number, self: Animal): { x: number; y: n
         for (let dx = -1; dx <= 1; dx++) {
             const nx = Math.min(Math.max(x + dx, 0), cols - 1);
             const ny = Math.min(Math.max(y + dy, 0), rows - 1);
-            if (isFree(nx, ny, self)) options.push({ x: nx, y: ny });
+            if (isFree(nx, ny, self))
+                options.push({ x: nx, y: ny });
         }
     }
-    if (options.length === 0) return null;
+    if (options.length === 0)
+        return null;
     return options[Math.floor(Math.random() * options.length)];
 }
 
 class Animal {
     x: number;
     y: number;
-    hunger: number = 10;
+    hunger: number = HUNGER_NUM;
     alive: boolean = true;
 
     constructor(x: number, y: number) {
@@ -116,17 +179,17 @@ class Animal {
 
     act(grid: number[][]) {
         if (this.alive == true) {
-            if (grid[this.y][this.x] === 1) //eat
-            {
+            if (grid[this.y][this.x] === 1 && this.hunger <= MIN_HUNGER_V) //with grass
+            { //eat
                 grid[this.y][this.x] = 0
-                this.hunger = 10
+                this.hunger += FEED_V_NUM;
                 growTimer[this.y][this.x] = 0;
             }
-            else {
-                const move = searchForFood(grid, this.y, this.x);
-                if (move != null) {
-                    const targetX = Math.min(Math.max(this.x + move.x, 0), cols - 1);
-                    const targetY = Math.min(Math.max(this.y + move.y, 0), rows - 1);
+            else { //without grass
+                const moveFood = searchForFood(grid, this.y, this.x);
+                if (moveFood != null) {
+                    const targetX = Math.min(Math.max(this.x + moveFood.x, 0), cols - 1);
+                    const targetY = Math.min(Math.max(this.y + moveFood.y, 0), rows - 1);
                     if (isFree(targetX, targetY, this)) {
                         this.x = targetX;
                         this.y = targetY;
@@ -152,24 +215,68 @@ class Animal {
     }
 }
 
-let animals: Animal[] = [];
-function posAnimals() {
-    animals = [];
-    const total = rows * cols;
-    const need = Math.min(na, total);
-    const indices: number[] = Array.from({ length: total }, (_, i) => i);
-    for (let i = 0; i < need; i++) { //parcial Fisher–Yates shuffle
-        const j = i + Math.floor(Math.random() * (total - i));
-        [indices[i], indices[j]] = [indices[j], indices[i]];
+function searchForAnimal(g : number[][]) //TODO
+
+class Predator {
+    x: number;
+    y: number;
+    hunger: number = HUNGER_NUM;
+    alive: boolean = true;
+
+    constructor(x: number, y: number) {
+        this.x = x;
+        this.y = y;
     }
+
+    act(grid: number[][]) {
+        if (this.alive === true)
+        {
+            searchForAnimal(grid) //TODO
+
+            if (this.hunger <= 0)
+                this.alive = false;
+        }
+
+    }
+}
+
+let animals: Animal[] = [];
+let predators: Predator[] = [];
+
+function Generate() {
+    animals = [];
+    predators = [];
+    const land: number[] = [];
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            if (grid[y][x] !== 2) land.push(y * cols + x);
+        }
+    }
+    const needAnimals = ANIMAL_NUMBER;
+    const needPredators = PREDATOR_NUMBER;
+    const need = needAnimals + needPredators;
+    if ((needAnimals + needPredators) > land.length)
+        return;
     for (let i = 0; i < need; i++) {
-        const idx = indices[i];
+        const j = i + Math.floor(Math.random() * (land.length - i));
+        [land[i], land[j]] = [land[j], land[i]];
+    }
+    let j = 0;
+    for (let i = 0; i < needAnimals; i++) {
+        const idx = land[j++];
         const y = Math.floor(idx / cols);
         const x = idx % cols;
         animals.push(new Animal(x, y));
     }
+    for (let i = 0; i < needPredators; i++) {
+        const idx = land[j++];
+        const y = Math.floor(idx / cols);
+        const x = idx % cols;
+        predators.push(new Predator(x, y));
+    }
 }
-posAnimals();
+generateRiver(grid);
+Generate();
 
 function drawAnimal() {
     for (const animal of animals) {
@@ -178,6 +285,20 @@ function drawAnimal() {
             ctx.fillRect(
                 animal.x * cellSize + cellSize * 0.25,
                 animal.y * cellSize + cellSize * 0.25,
+                cellSize * 0.5,
+                cellSize * 0.5
+            );
+        }
+    }
+}
+
+function drawPredator() {
+    for (const predator of predators) {
+        if (predator.alive == true) {
+            ctx.fillStyle = "red";
+            ctx.fillRect(
+                predator.x * cellSize + cellSize * 0.25,
+                predator.y * cellSize + cellSize * 0.25,
                 cellSize * 0.5,
                 cellSize * 0.5
             );
@@ -195,7 +316,7 @@ function growGrassByTicks(timer: number[][], grid: number[][], growTicks: number
                     timer[y][x] = 0;
                 }
             } else {
-                if (timer[y][x] !== 0) 
+                if (timer[y][x] !== 0)
                     timer[y][x] = 0;
             }
         }
@@ -212,25 +333,37 @@ function drawNextTic(grid: number[][]) {
             } else if (grid[y][x] === 1) {
                 ctx.fillStyle = GREEN;
                 ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+            } else if (grid[y][x] === 2) {
+                ctx.fillStyle = WATER;
+                ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
             }
         }
     }
     drawAnimal();
+    drawPredator();
     //drawGrid(ctx, canvas.width, canvas.height, cellSize);
 }
 
 function updatePopulation() {
-    let i = 0;
+    let aliveAnimals = 0;
     for (const a of animals) {
         if (a.alive)
-            i++;
+            aliveAnimals++;
     }
-    document.getElementById("population")!.innerText = i.toString();
+    let alivePredators = 0;
+    for (const p of predators) {
+        if (p.alive)
+            alivePredators++;
+    }
+    const popEl = document.getElementById("population");
+    if (popEl) popEl.innerText = aliveAnimals.toString();
+    const predEl = document.getElementById("predators");
+    if (predEl) predEl.innerText = alivePredators.toString();
 }
 
 //------------------------------web.ts
 let start: boolean = false;
-let speed: number = 100;
+let speed: number = 300;
 let restart: boolean = true;
 
 function rst() {
@@ -241,7 +374,8 @@ function rst() {
     growTimer = [];
     initTimer(growTimer);
     animals = [];
-    posAnimals();
+    generateRiver(grid);
+    Generate();
     drawNextTic(grid);
     updatePopulation();
 
@@ -266,15 +400,18 @@ export function setSpeed(value: number) {
 
 export function setSize(preset: 'x1' | 'x2' | 'x4') {
     if (preset === 'x1') {
-        na = 20;
+        ANIMAL_NUMBER = 20;
+        PREDATOR_NUMBER = 5
         canvas.width = 500;
         canvas.height = 500;
     } else if (preset === 'x2') {
-        na = 50;
+        ANIMAL_NUMBER = 50;
+        PREDATOR_NUMBER = 10;
         canvas.width = 1000;
         canvas.height = 1000;
     } else if (preset === 'x4') {
-        na = 500;
+        ANIMAL_NUMBER = 500;
+        PREDATOR_NUMBER = 100;
         canvas.width = 2000;
         canvas.height = 2000;
     }
@@ -282,8 +419,20 @@ export function setSize(preset: 'x1' | 'x2' | 'x4') {
 }
 //--------------------------------------------------
 
+function stoptick() {
+    let i = 0;
+    for (const a of animals) {
+        if (a.alive == false)
+            i++;
+    }
+    if (animals.length == i)
+        return (true);
+    return (false);
+}
+
+
 function tick() {
-    if (!start)
+    if (!start || stoptick())
         return;
     for (const animal of animals) {
         animal.act(grid);
