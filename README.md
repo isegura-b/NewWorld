@@ -101,6 +101,7 @@ Agents use a **radial search algorithm** that:
 - 🟩 **Green**: Available grass (food)
 - 🟫 **Brown**: Consumed grass (regenerating)
 - ⬛ **Black**: Living agents
+- 🟥 **Red**:   Predator living agents
 
 ## 📊 Project Structure
 
