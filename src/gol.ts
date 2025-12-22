@@ -5,7 +5,7 @@ canvas.width = 500;
 canvas.height = 500;
 
 const cellSize = 20;
-let ANIMAL_NUMBER: number = 3;
+let ANIMAL_NUMBER: number = 40;
 let PREDATOR_NUMBER: number = 3;
 let cols: number = canvas.width / cellSize;
 let rows: number = canvas.height / cellSize;
@@ -15,13 +15,13 @@ const GREEN = "#1d9200ff";
 const WATER = "#1e6ff2";
 const GROW_TICKS = 100;
 
-const HUNGER_NUM = 15;
+const HUNGER_NUM = 10 + Math.floor(Math.random() * 6);
 
 const MIN_HUNGER_V = 10;
-const MIN_HUNGER_C = 5;
+const MIN_HUNGER_C = 8;
 
 const FEED_V_NUM = 5;
-const FEED_C_CUM = 10;
+const FEED_C_NUM = 10;
 
 
 let grid: number[][] = [];
@@ -29,7 +29,7 @@ function initGrid(grid: number[][]) {
     for (let y = 0; y < rows; y++) {
         const row: number[] = [];
         for (let x = 0; x < cols; x++) {
-            row.push(1);
+                row.push(1);
         }
         grid.push(row);
     }
@@ -64,8 +64,8 @@ function generateRiver(g: number[][]) {
             const r = Math.random();
             let momentum = 0;
             let drift = 0;
-            if (r < 0.2) 
-                drift = -1; 
+            if (r < 0.2)
+                drift = -1;
             else if (r > 0.8)
                 drift = 1;
             if (momentum !== 0 && Math.random() < 0.6)
@@ -135,7 +135,7 @@ function searchForFood(g: number[][], y: number, x: number): { x: number; y: num
     return null;
 }
 
-function isFree(x: number, y: number, self: Animal): boolean {
+function isFree(x: number, y: number, self: { x: number; y: number }): boolean {
     if (grid[y][x] === 2)
         return false;
     for (const a of animals) {
@@ -145,13 +145,15 @@ function isFree(x: number, y: number, self: Animal): boolean {
             return false;
     }
     for (const p of predators) {
+        if (p === self)
+            continue;
         if (p.x === x && p.y === y)
             return false;
     }
     return true;
 }
 
-function pickFreeNeighbor(x: number, y: number, self: Animal): { x: number; y: number } | null {
+function pickFreeNeighbor(x: number, y: number, self: { x: number; y: number }): { x: number; y: number } | null {
     const options: Array<{ x: number; y: number }> = [];
     for (let dy = -1; dy <= 1; dy++) {
         for (let dx = -1; dx <= 1; dx++) {
@@ -186,10 +188,10 @@ class Animal {
                 growTimer[this.y][this.x] = 0;
             }
             else { //without grass
-                const moveFood = searchForFood(grid, this.y, this.x);
-                if (moveFood != null) {
-                    const targetX = Math.min(Math.max(this.x + moveFood.x, 0), cols - 1);
-                    const targetY = Math.min(Math.max(this.y + moveFood.y, 0), rows - 1);
+                const move = searchForFood(grid, this.y, this.x);
+                if (move != null) {
+                    const targetX = Math.min(Math.max(this.x + move.x, 0), cols - 1);
+                    const targetY = Math.min(Math.max(this.y + move.y, 0), rows - 1);
                     if (isFree(targetX, targetY, this)) {
                         this.x = targetX;
                         this.y = targetY;
@@ -215,7 +217,42 @@ class Animal {
     }
 }
 
-function searchForAnimal(g : number[][]) //TODO
+function searchForAnimal(x: number, y: number, animals: Animal[]): { x: number; y: number } | null {
+    const max = Math.max(rows, cols);
+    for (let r = 1; r <= max; r++) {
+        const candidates: Array<{ stepX: number; stepY: number; mapX: number; mapY: number }> = [];
+        for (let dy = -r; dy <= r; dy++) {
+            for (let dx = -r; dx <= r; dx++) {
+                if (dx === 0 && dy === 0)
+                    continue;
+                const ny = y + dy;
+                const nx = x + dx;
+                if (ny < 0 || ny >= rows || nx < 0 || nx >= cols)
+                    continue;
+                for (const a of animals) {
+                    if (a.alive && a.x == nx && a.y == ny) {
+                        candidates.push({ stepX: Math.sign(dx), stepY: Math.sign(dy), mapX: nx, mapY: ny });
+                    }
+                }
+            }
+        }
+        if (candidates.length > 0) {
+            const c = candidates[Math.floor(Math.random() * candidates.length)];
+            return { x: c.stepX, y: c.stepY };
+        }
+    }
+    return null;
+}
+
+function nearFood(x: number, y: number) {
+    for (const a of animals) {
+        if ((a.x >= x - 1 && a.x <= x + 1) && (a.y >= y - 1 && a.y <= y + 1)) {
+            a.alive = false;
+            return true;
+        }
+    }
+    return false
+}
 
 class Predator {
     x: number;
@@ -229,14 +266,41 @@ class Predator {
     }
 
     act(grid: number[][]) {
-        if (this.alive === true)
-        {
-            searchForAnimal(grid) //TODO
+        if (this.alive !== true) return;
 
-            if (this.hunger <= 0)
-                this.alive = false;
+        const move = searchForAnimal(this.x, this.y, animals);
+        if (move != null && MIN_HUNGER_C >= this.hunger) {
+            const targetX = Math.min(Math.max(this.x + move.x, 0), cols - 1);
+            const targetY = Math.min(Math.max(this.y + move.y, 0), rows - 1);
+
+            // If there's an animal on the target cell, eat it and move there
+            const victim = animals.find(a => a.alive && a.x === targetX && a.y === targetY);
+            if (victim) {
+                victim.alive = false;
+                this.x = targetX;
+                this.y = targetY;
+                this.hunger += FEED_C_NUM;
+            } else {
+                // Otherwise, move closer if the cell is free; else pick a free neighbor
+                if (isFree(targetX, targetY, this)) {
+                    this.x = targetX;
+                    this.y = targetY;
+                } else {
+                    const n = pickFreeNeighbor(this.x, this.y, this);
+                    if (n) {
+                        this.x = n.x;
+                        this.y = n.y;
+                    }
+                }
+                this.hunger--;
+            }
+        } else {
+            // No target or not hungry enough to chase: sleep
+            this.hunger--;
         }
 
+        if (this.hunger <= 0) 
+            this.alive = false;
     }
 }
 
@@ -411,7 +475,7 @@ export function setSize(preset: 'x1' | 'x2' | 'x4') {
         canvas.height = 1000;
     } else if (preset === 'x4') {
         ANIMAL_NUMBER = 500;
-        PREDATOR_NUMBER = 100;
+        PREDATOR_NUMBER = 50;
         canvas.width = 2000;
         canvas.height = 2000;
     }
@@ -425,7 +489,12 @@ function stoptick() {
         if (a.alive == false)
             i++;
     }
-    if (animals.length == i)
+    for (const p of predators)
+    {
+        if (p.alive == false)
+            i++;
+    }
+    if (animals.length + predators.length == i)
         return (true);
     return (false);
 }
@@ -434,9 +503,10 @@ function stoptick() {
 function tick() {
     if (!start || stoptick())
         return;
-    for (const animal of animals) {
+    for (const animal of animals)
         animal.act(grid);
-    }
+    for (const p of predators)
+        p.act(grid);
     growGrassByTicks(growTimer, grid, GROW_TICKS);
     drawNextTic(grid);
     updatePopulation();
