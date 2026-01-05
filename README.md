@@ -85,7 +85,7 @@ npm run dev
 2. When eating, they satisfy hunger for 10 turns
 3. Without food, they lose hunger each turn
 4. With hunger = 0, the agent dies
-5. Eaten grass regenerates after 100 ticks
+5. Eaten grass regenerates after 80 ticks
 ```
 
 ### Movement System
@@ -102,6 +102,18 @@ Agents use a **radial search algorithm** that:
 - 🟫 **Brown**: Consumed grass (regenerating)
 - ⬛ **Black**: Living agents
 - 🟥 **Red**:   Predator living agents
+
+## 🧠 Advanced Mechanics
+
+- **Reproduction (Animals)**: When `hunger > 16` and `rep <= 2`, an animal seeks a mate in adjacent cells. If found, a child spawns in a free neighboring cell. Parents incur a hunger cost (`-6`) and enter a reproduction cooldown (`25` ticks).
+- **Reproduction (Predators)**: When `hunger > 18` and `rep <= 0`, predators reproduce similarly, spawning a child predator in a free adjacent cell. Hunger cost is `-8`, and reproduction cooldown is `30` ticks.
+- **Feeding and Hunger**: Animals eat grass when standing on it and hungry (`<= 10`), gaining `+10` hunger and turning the tile to regenerating brown. Predators eat animals by moving into their cell when hungry (`<= 12`), gaining `+20` hunger.
+- **Aging and Death**: Animals die at `age >= 400`; predators at `age >= 600`. All entities also die when `hunger <= 0`.
+- **Terrain and Rivers**: Rivers are procedurally generated water tiles that are impassable for all agents; entities cannot move onto water.
+- **Time and UI**: The simulation increments `year` each tick and displays live counts for animals and predators.
+- **Speed and Tick Rate**: The delay per tick is `500 - speed` ms; higher `speed` means faster simulation.
+
+See [src/gol.ts](src/gol.ts) for implementation details.
 
 ## 📊 Project Structure
 
@@ -120,8 +132,6 @@ NewWorld/
 
 ## 🔮 Future Improvements
 
-- [ ] Agent reproduction system
-- [ ] Different agent types (herbivores/carnivores)
 - [ ] Population statistics and graphs
 - [ ] Genetic algorithms for agent evolution
 
