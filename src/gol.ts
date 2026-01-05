@@ -4,24 +4,40 @@ const ctx = canvas.getContext("2d")!;
 canvas.width = 500;
 canvas.height = 500;
 
-const cellSize = 20;
-let ANIMAL_NUMBER: number = 40;
-let PREDATOR_NUMBER: number = 3;
+const cellSize = 10;
 let cols: number = canvas.width / cellSize;
 let rows: number = canvas.height / cellSize;
 
 const BROWN = "#552d00ff";
 const GREEN = "#1d9200ff";
 const WATER = "#1e6ff2";
-const GROW_TICKS = 100;
+const GROW_TICKS = 80;
 
-const HUNGER_NUM = 10 + Math.floor(Math.random() * 6);
+//Animal####################
+let ANIMAL_NUMBER = 40;
 
 const MIN_HUNGER_V = 10;
-const MIN_HUNGER_C = 8;
+const FEED_V_NUM = 10;
 
-const FEED_V_NUM = 5;
-const FEED_C_NUM = 10;
+const MIN_REP_V = 16;
+const REP_COOLDOWN_V = 25;
+const REP_COST_V = 6;
+
+const MAX_AGE_V = 400;
+//#########################
+
+//Predator#################
+let PREDATOR_NUMBER = 8;
+
+const MIN_HUNGER_C = 12;
+const FEED_C_NUM = 20;
+
+const MIN_REP_C = 18;
+const REP_COOLDOWN_C = 30;
+const REP_COST_C = 8;
+
+const MAX_AGE_C = 600;
+//#########################
 
 
 let grid: number[][] = [];
@@ -29,7 +45,7 @@ function initGrid(grid: number[][]) {
     for (let y = 0; y < rows; y++) {
         const row: number[] = [];
         for (let x = 0; x < cols; x++) {
-                row.push(1);
+            row.push(1);
         }
         grid.push(row);
     }
@@ -141,13 +157,13 @@ function isFree(x: number, y: number, self: { x: number; y: number }): boolean {
     for (const a of animals) {
         if (a === self)
             continue;
-        if (a.x === x && a.y === y)
+        if (a.alive && a.x === x && a.y === y)
             return false;
     }
     for (const p of predators) {
         if (p === self)
             continue;
-        if (p.x === x && p.y === y)
+        if (p.alive && p.x === x && p.y === y)
             return false;
     }
     return true;
@@ -168,26 +184,98 @@ function pickFreeNeighbor(x: number, y: number, self: { x: number; y: number }):
     return options[Math.floor(Math.random() * options.length)];
 }
 
+function isOccupied(x: number, y: number): boolean {
+    if (grid[y][x] === 2)
+        return true;
+    for (const a of animals) {
+        if (a.alive && a.x === x && a.y === y)
+            return true;
+    }
+    for (const p of predators) {
+        if (p.alive && p.x === x && p.y === y)
+            return true;
+    }
+    return false;
+}
+
+function findFreeNeighborCell(x: number, y: number): { x: number; y: number } | null {
+    const options: Array<{ x: number; y: number }> = [];
+    for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+            const nx = Math.min(Math.max(x + dx, 0), cols - 1);
+            const ny = Math.min(Math.max(y + dy, 0), rows - 1);
+            if (!isOccupied(nx, ny))
+                options.push({ x: nx, y: ny });
+        }
+    }
+    if (options.length === 0)
+        return null;
+    return options[Math.floor(Math.random() * options.length)];
+}
+
+function findMateNearbyAnimal(self: Animal): Animal | null {
+    for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+            if (dx === 0 && dy === 0)
+                continue;
+            const nx = self.x + dx;
+            const ny = self.y + dy;
+            if (ny < 0 || ny >= rows || nx < 0 || nx >= cols)
+                continue;
+            for (const a of animals) {
+                if (a !== self && a.alive && a.x === nx && a.y === ny && a.hunger > MIN_REP_V && a.rep <= 2) {
+                    return a;
+                }
+            }
+        }
+    }
+    return null;
+}
+
+function findMateNearbyPredator(self: Predator): Predator | null {
+    for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+            if (dx === 0 && dy === 0)
+                continue;
+            const nx = self.x + dx;
+            const ny = self.y + dy;
+            if (ny < 0 || ny >= rows || nx < 0 || nx >= cols)
+                continue;
+            for (const p of predators) {
+                if (p !== self && p.alive && p.x === nx && p.y === ny && p.hunger > MIN_REP_C) {
+                    return p;
+                }
+            }
+        }
+    }
+    return null;
+}
+
 class Animal {
     x: number;
     y: number;
-    hunger: number = HUNGER_NUM;
+    hunger: number;
     alive: boolean = true;
+    rep: number = 4;
+    age : number;
 
     constructor(x: number, y: number) {
         this.x = x;
         this.y = y;
+        this.hunger = 14 + Math.floor(Math.random() * 6);
+        this.age = 0;
     }
 
     act(grid: number[][]) {
         if (this.alive == true) {
             if (grid[this.y][this.x] === 1 && this.hunger <= MIN_HUNGER_V) //with grass
             { //eat
-                grid[this.y][this.x] = 0
+                grid[this.y][this.x] = 0;
                 this.hunger += FEED_V_NUM;
                 growTimer[this.y][this.x] = 0;
+                return;
             }
-            else { //without grass
+            else if (this.hunger <= MIN_HUNGER_V) { //without grass
                 const move = searchForFood(grid, this.y, this.x);
                 if (move != null) {
                     const targetX = Math.min(Math.max(this.x + move.x, 0), cols - 1);
@@ -195,25 +283,50 @@ class Animal {
                     if (isFree(targetX, targetY, this)) {
                         this.x = targetX;
                         this.y = targetY;
-                    } else {
-                        const n = pickFreeNeighbor(this.x, this.y, this);
-                        if (n) {
-                            this.x = n.x;
-                            this.y = n.y;
-                        }
-                    }
-                } else {
-                    const n = pickFreeNeighbor(this.x, this.y, this);
-                    if (n) {
-                        this.x = n.x;
-                        this.y = n.y;
                     }
                 }
-                this.hunger--;
             }
+            else if (this.hunger > MIN_REP_V && this.rep <= 2) // reproduction
+            {
+                const mate = findMateNearbyAnimal(this);
+                if (mate) {
+                    let spawn = findFreeNeighborCell(this.x, this.y);
+                    if (!spawn) spawn = findFreeNeighborCell(mate.x, mate.y);
+                    if (spawn) {
+                        animals.push(new Animal(spawn.x, spawn.y));
+                        this.rep = REP_COOLDOWN_V;
+                        mate.rep = REP_COOLDOWN_V;
+                        this.hunger -= REP_COST_V;
+                        mate.hunger -= REP_COST_V;
+                        return;
+                    }
+                }
+                else {
+                    const move = searchForPartner(this.x, this.y, this);
+                    if (move != null) {
+                        const targetX = Math.min(Math.max(this.x + move.x, 0), cols - 1);
+                        const targetY = Math.min(Math.max(this.y + move.y, 0), rows - 1);
+                        if (isFree(targetX, targetY, this)) {
+                            this.x = targetX;
+                            this.y = targetY;
+                        }
+                    }
+                }
+            }
+            else {
+                const n = pickFreeNeighbor(this.x, this.y, this);
+                if (n) {
+                    this.x = n.x;
+                    this.y = n.y;
+                }
+            }
+            if (this.rep > 0)
+                this.rep--; 
+            this.hunger--;
+            this.age++;
+            if (this.hunger <= 0 || this.age >= MAX_AGE_V)
+                this.alive = false;
         }
-        if (this.hunger <= 0)
-            this.alive = false;
     }
 }
 
@@ -244,34 +357,37 @@ function searchForAnimal(x: number, y: number, animals: Animal[]): { x: number; 
     return null;
 }
 
-function nearFood(x: number, y: number) {
-    for (const a of animals) {
-        if ((a.x >= x - 1 && a.x <= x + 1) && (a.y >= y - 1 && a.y <= y + 1)) {
-            a.alive = false;
-            return true;
-        }
+function searchForPartner(x: number, y: number, self: Animal | Predator): { x: number; y: number } | null {
+    if (self instanceof Animal) {
+        return searchForAnimal(x, y, animals);
+    } else {
+        return searchForAnimal(x, y, predators as any);
     }
-    return false
 }
 
 class Predator {
     x: number;
     y: number;
-    hunger: number = HUNGER_NUM;
+    hunger: number;
     alive: boolean = true;
+    rep: number = 4;
+    age : number;
 
     constructor(x: number, y: number) {
         this.x = x;
         this.y = y;
+        this.hunger = 15 + Math.floor(Math.random() * 6);
+        this.age = 0;
     }
 
-    act(grid: number[][]) {
-        if (this.alive !== true) return;
-
-        const move = searchForAnimal(this.x, this.y, animals);
-        if (move != null && MIN_HUNGER_C >= this.hunger) {
-            const targetX = Math.min(Math.max(this.x + move.x, 0), cols - 1);
-            const targetY = Math.min(Math.max(this.y + move.y, 0), rows - 1);
+    act() {
+        if (this.alive !== true)
+            return;
+        const moveForFood = searchForAnimal(this.x, this.y, animals);
+        // 1) If hungry, seek food first
+        if (this.hunger <= MIN_HUNGER_C && moveForFood != null) {
+            const targetX = Math.min(Math.max(this.x + moveForFood.x, 0), cols - 1);
+            const targetY = Math.min(Math.max(this.y + moveForFood.y, 0), rows - 1);
 
             // If there's an animal on the target cell, eat it and move there
             const victim = animals.find(a => a.alive && a.x === targetX && a.y === targetY);
@@ -281,25 +397,59 @@ class Predator {
                 this.y = targetY;
                 this.hunger += FEED_C_NUM;
             } else {
-                // Otherwise, move closer if the cell is free; else pick a free neighbor
+                // Otherwise, move closer if the cell is free; else stay //pick a free neighbor
                 if (isFree(targetX, targetY, this)) {
                     this.x = targetX;
                     this.y = targetY;
-                } else {
-                    const n = pickFreeNeighbor(this.x, this.y, this);
-                    if (n) {
-                        this.x = n.x;
-                        this.y = n.y;
+                }
+            }
+        }
+        // 2) If not hungry, prioritize reproduction (only if cooldown elapsed)
+        else if (this.hunger > MIN_REP_C && this.rep <=0) {
+            // Try to reproduce if possible
+            const mate = findMateNearbyPredator(this);
+            if (mate) {
+                let spawn = findFreeNeighborCell(this.x, this.y);
+                if (!spawn) 
+                    spawn = findFreeNeighborCell(mate.x, mate.y);
+                if (spawn && mate.rep <= 0) {
+                    const child = new Predator(spawn.x, spawn.y);
+                    child.rep = REP_COOLDOWN_C;
+                    predators.push(child);
+                    this.rep = REP_COOLDOWN_C;
+                    mate.rep = REP_COOLDOWN_C;
+                    this.hunger -= REP_COST_C;
+                    mate.hunger -= REP_COST_C;
+                    return;
+                }
+            } else {
+                // If no adjacent mate, move toward one
+                const move = searchForPartner(this.x, this.y, this);
+                if (move != null) {
+                    const targetX = Math.min(Math.max(this.x + move.x, 0), cols - 1);
+                    const targetY = Math.min(Math.max(this.y + move.y, 0), rows - 1);
+                    if (isFree(targetX, targetY, this)) {
+                        this.x = targetX;
+                        this.y = targetY;
                     }
                 }
-                this.hunger--;
             }
-        } else {
-            // No target or not hungry enough to chase: sleep
-            this.hunger--;
         }
-
-        if (this.hunger <= 0) 
+        // 3) If neither reproduction nor critical hunger, move toward food if direction is known
+        else if (moveForFood != null) {
+            const targetX = Math.min(Math.max(this.x + moveForFood.x, 0), cols - 1);
+            const targetY = Math.min(Math.max(this.y + moveForFood.y, 0), rows - 1);
+            if (isFree(targetX, targetY, this)) {
+                this.x = targetX;
+                this.y = targetY;
+            }
+        }
+        // Tick down reproduction cooldown
+        if (this.rep > 0) 
+            this.rep--;
+        this.hunger--;
+        this.age++;
+        if (this.hunger <= 0 || this.age >= MAX_AGE_C)
             this.alive = false;
     }
 }
@@ -420,15 +570,25 @@ function updatePopulation() {
             alivePredators++;
     }
     const popEl = document.getElementById("population");
-    if (popEl) popEl.innerText = aliveAnimals.toString();
+    if (popEl) 
+        popEl.innerText = aliveAnimals.toString();
     const predEl = document.getElementById("predators");
-    if (predEl) predEl.innerText = alivePredators.toString();
+    if (predEl) 
+        predEl.innerText = alivePredators.toString();
+}
+
+let year : number = 0;
+function updateYear()
+{
+    const yearEl = document.getElementById("year");
+    if (yearEl)
+        yearEl.innerText = year.toString();
+    year++;
 }
 
 //------------------------------web.ts
 let start: boolean = false;
 let speed: number = 300;
-let restart: boolean = true;
 
 function rst() {
     cols = canvas.width / cellSize;
@@ -442,6 +602,8 @@ function rst() {
     Generate();
     drawNextTic(grid);
     updatePopulation();
+    year = 0;
+    updateYear();
 
     start = false;
 }
@@ -484,19 +646,10 @@ export function setSize(preset: 'x1' | 'x2' | 'x4') {
 //--------------------------------------------------
 
 function stoptick() {
-    let i = 0;
-    for (const a of animals) {
-        if (a.alive == false)
-            i++;
-    }
-    for (const p of predators)
-    {
-        if (p.alive == false)
-            i++;
-    }
-    if (animals.length + predators.length == i)
-        return (true);
-    return (false);
+    if (animals.length === 0 && predators.length === 0)
+        return 1;
+    else
+        return 0;
 }
 
 
@@ -506,10 +659,18 @@ function tick() {
     for (const animal of animals)
         animal.act(grid);
     for (const p of predators)
-        p.act(grid);
+        p.act();
+    // Remove dead entities from the lists without using .filter
+    for (let i = animals.length - 1; i >= 0; i--) {
+        if (!animals[i].alive) animals.splice(i, 1);
+    }
+    for (let i = predators.length - 1; i >= 0; i--) {
+        if (!predators[i].alive) predators.splice(i, 1);
+    }
     growGrassByTicks(growTimer, grid, GROW_TICKS);
     drawNextTic(grid);
     updatePopulation();
+    updateYear();
     setTimeout(tick, 500 - speed);
 }
 
